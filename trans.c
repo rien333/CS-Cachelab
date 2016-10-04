@@ -24,14 +24,14 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
 	int i, j, ir, jr, tmp;
 
-    for (ir = 4; ir <= N; ir =+ 4) {
-        for (jr = 4; jr <= M; jr =+ 4) {
+    for (ir = 4; ir <= N; ir += 4) {
+        for (jr = 4; jr <= M; jr += 4) {
 	    for(i = 0; i < ir; i++){
 		for(j = 0; j < jr; j++){
             	    tmp = A[i][j];
             	    B[j][i] = tmp;
-		    printf("%d", i);
-		    printf("%d", j);
+		    printf("%d \n", i);
+		    printf("%d \n", j);
 		}
 	    }
 	    ir += 4;
@@ -84,7 +84,7 @@ void registerFunctions()
     /* Register any additional transpose functions */
     registerTransFunction(trans, trans_desc); 
 
-}
+
 
 /* 
  * is_transpose - This helper function checks if B is the transpose of
@@ -104,4 +104,49 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N])
     }
     return 1;
 }
+
+
+/* -----------------------------------------------------------------
+				'||'''|. '||''''| '||     '||''''| |''||''| '||''''|
+				 ||   ||  ||   .   ||      ||   .     ||     ||   .
+				 ||   ||  ||'''|   ||      ||'''|     ||     ||'''|
+				 ||   ||  ||       ||      ||         ||     ||
+				.||...|' .||....| .||...| .||....|   .||.   .||....|
+				
+				
+								|''||''| '||  ||` |''||''| .|'''|
+								   ||     ||  ||     ||    ||
+								   ||     ||''||     ||    `|'''|,
+								   ||     ||  ||     ||     .   ||
+								  .||.   .||  ||. |..||..|  |...|'
+
+  ---------------------------------------------------------------- */ 
+
+
+// To enable debugging (i.e. run this main), enter the following:
+// $ gcc trans.c -o trans-test
+// To run it with the matrix you specified in main(), enter:
+// $ ./trans-test 
+// PROFIT??? 
+
+
+
+#ifdef DEBUG
+
+int main()
+{
+	int M = 2;
+	int N = 4; 
+	int A[N][M] = {{5, 7}, {3, 2}, {1, 6}, {9, 2}}; // Fill up A
+	int B[M][N];
+	transpose_submit(M, N, A, B);
+}
+
+
+#endif
+
+
+
+
+
 
