@@ -23,7 +23,7 @@ char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
 	int i, j, ir, jr, tmp;
-
+	printf("Hey yo! 😄\n");
     for (ir = 4; ir <= N; ir += 4) {
         for (jr = 4; jr <= M; jr += 4) {
 	    for(i = 0; i < ir; i++){
@@ -33,7 +33,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 		    printf("%d \n", i);
 		    printf("%d \n", j);
 		}
-	    }
+	    } 
 	    ir += 4;
         }
     }  
@@ -76,6 +76,7 @@ void trans(int M, int N, int A[N][M], int B[M][N])
  *     performance. This is a handy way to experiment with different
  *     transpose strategies.
  */
+#ifndef DEBUG
 void registerFunctions()
 {
     /* Register your solution function */
@@ -84,7 +85,8 @@ void registerFunctions()
     /* Register any additional transpose functions */
     registerTransFunction(trans, trans_desc); 
 
-
+}
+#endif
 
 /* 
  * is_transpose - This helper function checks if B is the transpose of
@@ -135,10 +137,16 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N])
 
 int main()
 {
-	int M = 2;
-	int N = 4; 
-	int A[N][M] = {{5, 7}, {3, 2}, {1, 6}, {9, 2}}; // Fill up A
+	// These defines have syntacical reasons, don't mind them
+	#define ROWS 4 
+	#define COLS 2
+
+	int M = COLS;
+	int N = ROWS; 
+	int A[ROWS][COLS] = {{5, 7}, {3, 2}, {1, 6}, {9, 2}}; // Fill up A
 	int B[M][N];
+
+	printf("A: %d \n", A[2][0]);
 	transpose_submit(M, N, A, B);
 }
 
