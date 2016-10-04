@@ -22,16 +22,21 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
-    int i, j, tmp;
+	int i, j, ir, jr, tmp;
 
-    for (i = 0; i < N; i++) {
-        for (j = 0; j < M; j++) {
-            tmp = A[i][j];
-            B[j][i] = tmp;
+    for (ir = 4; ir <= N; ir =+ 4) {
+        for (jr = 4; jr <= M; jr =+ 4) {
+	    for(i = 0; i < ir; i++){
+		for(j = 0; j < jr; j++){
+            	    tmp = A[i][j];
+            	    B[j][i] = tmp;
+		    printf("%d", i);
+		    printf("%d", j);
+		}
+	    }
+	    ir += 4;
         }
-    }
-
-		
+    }  
 }
 
 /* 
@@ -45,13 +50,21 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 char trans_desc[] = "Simple row-wise scan transpose";
 void trans(int M, int N, int A[N][M], int B[M][N])
 {
-    int i, j, tmp;
+    int i, j, ir, jr, tmp;
+	jr = 8;
+	ir = 8;
 
     for (i = 0; i < N; i++) {
         for (j = 0; j < M; j++) {
-            tmp = A[i][j];
-            B[j][i] = tmp;
+	    for(; i < ir; i++){
+		for(; j < jr; j++){
+            	    tmp = A[i][j];
+            	    B[j][i] = tmp;
+		}
+	    }
+	    jr += 8;
         }
+	ir += 8;
     }    
 
 }
