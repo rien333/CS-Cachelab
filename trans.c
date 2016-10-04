@@ -124,7 +124,7 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N])
 
 
 // To enable debugging (i.e. run this main), enter the following:
-// $ gcc trans.c -o trans-test
+// $ gcc trans.c -o trans-test -D DEBUG
 // To run it with the matrix you specified in main(), enter:
 // $ ./trans-test 
 // PROFIT??? 
