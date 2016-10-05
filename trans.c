@@ -23,18 +23,18 @@ char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
 	int i, j, ir, jr, tmp;
+	int blocksize = 4;
 	printf("Hey yo! 😄\n");
-    for (ir = 4; ir <= N; ir += 4) {
-        for (jr = 4; jr <= M; jr += 4) {
-	    for(i = 0; i < ir; i++){
-		for(j = 0; j < jr; j++){
+    for (ir = 0; ir < N; ir += blocksize) {
+        for (jr = 0; jr < M; jr += blocksize) {
+	    for(i = ir; i < ir + blocksize; i++){
+		for(j = jr; j < jr + blocksize; j++){
             	    tmp = A[i][j];
             	    B[j][i] = tmp;
 		    printf("%d \n", i);
 		    printf("%d \n", j);
 		}
-	    } 
-	    ir += 4;
+	    }
         }
     }  
 }
@@ -50,21 +50,13 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 char trans_desc[] = "Simple row-wise scan transpose";
 void trans(int M, int N, int A[N][M], int B[M][N])
 {
-    int i, j, ir, jr, tmp;
-	jr = 8;
-	ir = 8;
+    int i, j, tmp;
 
     for (i = 0; i < N; i++) {
         for (j = 0; j < M; j++) {
-	    for(; i < ir; i++){
-		for(; j < jr; j++){
             	    tmp = A[i][j];
             	    B[j][i] = tmp;
-		}
-	    }
-	    jr += 8;
         }
-	ir += 8;
     }    
 
 }
