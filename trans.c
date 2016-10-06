@@ -8,7 +8,48 @@
  * on a 1KB direct mapped cache with a block size of 32 bytes.
  */ 
 #include <stdio.h>
+#ifdef DEBUG
+#include <stdlib.h>
+#endif
 #include "cachelab.h"
+
+#ifdef DEBUG
+
+int randrange(int min, int max)
+{
+	return (rand() % (max + 1 - min)) + min;
+}
+
+// Fill array with random elements
+void fill_array(int N, int M, int A[N][M])
+{
+	for(int i = 0; i < N; i++) {
+		for(int j = 0; j < M; j++) {
+			A[i][j] = randrange(0, 15);
+		}
+	}
+}
+
+void print_array(int N, int M, int A[N][M]) {
+	for(int i = 0; i < N; i++) {
+		for(int j = 0; j < M; j++) {
+			int num = A[i][j];
+			if(num > 9  && num < 20) {
+				printf("%d  ", num);
+			}
+			else if(num > 20 || num < 0) {
+				printf("0   ");
+				continue;
+			}
+			else {
+				printf("%d   ", num);
+			}
+		}
+		printf("\n");
+	}
+	printf("\n");
+}
+#endif
 
 int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 
@@ -24,16 +65,44 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
 	int i, j, ir, jr, tmp;
 	int blocksize = 8;
-    for (ir = 0; ir < N; ir += blocksize) {
-        for (jr = 0; jr < M; jr += blocksize) {
-	    for(i = ir; i < ir + blocksize; i++){
-		for(j = jr; j < jr + blocksize; j++){
-            	    tmp = A[i][j];
-            	    B[j][i] = tmp;
+
+	if(N==67 && M==61) {
+		blocksize = 4;
+		for (ir = 0; ir < 66; ir += blocksize) {
+		  for (jr = 0; jr < 60; jr += blocksize) {
+		    for(i = ir; i < ir + blocksize; i++){
+					for(j = jr; j < jr + blocksize; j++){
+		   	    tmp = A[i][j];
+		   	    B[j][i] = tmp;
+					}
+		    }
+			}
 		}
-	    }
-        }
-    }  
+
+		// Do like ordering between these ifs and start from a negative index (to exploit already cached shit)
+		for(j = 60; j > 0; j--) {
+	    tmp = A[0][j];
+ 	    B[j][0] = tmp;
+		}	
+
+		for(i = 1; i < 67; i++) {
+	    tmp = A[i][60];
+ 	    B[60][i] = tmp;
+		}
+	}
+	else {
+		for (ir = 0; ir < N; ir += blocksize) {
+		  for (jr = 0; jr < M; jr += blocksize) {
+		    for(i = ir; i < ir + blocksize; i++){
+					for(j = jr; j < jr + blocksize; j++){
+		   	    tmp = A[i][j];
+		   	    B[j][i] = tmp;
+					}
+		    }
+			}
+		}
+	}
+	
 }
 
 /* 
@@ -126,17 +195,18 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N])
 
 int main()
 {
-	// These defines have syntacical reasons, don't mind them
-	#define ROWS 4 
-	#define COLS 2
+	int M = 61;
+	int N = 67; 
+//	int A[N][M] = {{5, 7}, {3, 2}, {1, 6}, {9, 2}}; // Fill up A
 
-	int M = COLS;
-	int N = ROWS; 
-	int A[ROWS][COLS] = {{5, 7}, {3, 2}, {1, 6}, {9, 2}}; // Fill up A
+	int A[N][M];
 	int B[M][N];
 
-	printf("A: %d \n", A[2][0]);
+	fill_array(N, M, A);
+	print_array(N, M, A);
 	transpose_submit(M, N, A, B);
+	printf("\n\t------------------------------------------------------------------------------------ \n\n");
+	print_array(M, N, B);
 }
 
 
