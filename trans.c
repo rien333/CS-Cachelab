@@ -63,46 +63,42 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
-	int i, j, ir, jr, tmp;
+	int i, j, ir, jr;
+//	int blocksize = 8;
 	int temp1,temp2,temp3,temp4;
-
+	#define BLOCKSIZE4 4
+	#define BLOCKSIZE8 8
 
 	if(N==67 && M==61) {
-		#define BLOCKSIZE 4;
-		for (ir = 0; ir < 66; ir += BLOCKSIZE) {
-		  for (jr = 0; jr < 60; jr += BLOCKSIZE) {
-		    for(i = ir; i < ir + BLOCKSIZE; ++i) {
-					for(j = jr; j < jr + BLOCKSIZE; ++j){
-//		   	    tmp = ;
+		for (ir = 0; ir < 66; ir += BLOCKSIZE4) {
+		  for (jr = 0; jr < 60; jr += BLOCKSIZE4) {
+		    for(i = ir; i < ir + BLOCKSIZE4; ++i) {
+					for(j = jr; j < jr + BLOCKSIZE4; ++j){
 		   	  	B[j][i] = A[i][j];
 					}
 		    }
 			}
 		}
 		// Do like ordering between these ifs and start from a negative index (to exploit already cached shit)
-//		for(j = 1; j < 61; j++) {
 		for(j = 60; j > 0; --j) {
-	    tmp = A[0][j];
- 	    B[j][0] = tmp;
+ 	    B[j][0] = A[0][j];
 		}
 //		print_array(M,N,B);
 		for(i = 1; i < 67; ++i) {
-	    tmp = A[i][60];
- 	    B[60][i] = tmp;
+ 	    B[60][i] = A[i][60];
 		}
 	}
 	else { // if(N==64 && M==64) { // was 64x64
 		if(N==64 && M==64) { // was 64x64
-			#define BLOCKSIZE 4;
-			for (ir = 0; ir < N; ir += BLOCKSIZE) {
-				for (jr = 0; jr < M; jr += BLOCKSIZE) {
-					for(i = ir; i < ir + BLOCKSIZE; ++i) {
-						for(j = jr; j < jr + BLOCKSIZE; ++j) {
+			for (ir = 0; ir < N; ir += BLOCKSIZE4) {
+				for (jr = 0; jr < M; jr += BLOCKSIZE4) {
+					for(i = ir; i < ir + BLOCKSIZE4; ++i) {
+						for(j = jr; j < jr + BLOCKSIZE4; ++j) {
 							if (i != j) {
 						    B[j][i] = A[i][j];	//When not a diagonal element, perform the normal transpose
 							}
 							else {
-								switch(i%BLOCKSIZE) { // instead of tmpidx, maybe BLOCKSIZE-(j%BLOCKSIZE)? (but then correct) 
+								switch(i%BLOCKSIZE4) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
 									case 0:
 										temp1=A[i][j];
 										break;
@@ -122,8 +118,8 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 					// Block is over
 					if(ir==jr) { // on diagonal
 						i = 0; // reuse i
-						for(; i < BLOCKSIZE; i++) {
-							switch(i) { // instead of tmpidx, maybe BLOCKSIZE-(j%BLOCKSIZE)? (but then correct) 
+						for(; i < BLOCKSIZE4; i++) {
+							switch(i) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
 								case 0:
 									B[ir+i][ir+i]=temp1;
 									break;
@@ -142,66 +138,15 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 				}
 			}
 		}
-//		for (ir = 0; ir < N; ir += BLOCKSIZE) { // The conditional statement in this loop does not make sense
-//		  for (jr = 0; jr < M; jr += BLOCKSIZE) {
-//		    for(i = ir; i < ir + BLOCKSIZE; i++) {
-//					for(j = jr; j < jr + BLOCKSIZE; j++) {
-//						if(i>63 || j>63) { // Escape out of bounds
-//							continue;
-//						}
-//		   	    tmp = A[i][j];
-//		   	    B[j][i] = tmp;
-//						if(i==63&&j==63) {	
-////							printf("Halt! \n");
-//							goto HALT;
-//						}
-//					}
-//		    }
-//			}
-//		}
-//		HALT: ;
-
-//		print_array(M,N,B);
-	// Do the collumn wise part first, because that will end where the row wise part starts
-//		for (i = 0; i < 50; i++) {
-//	      for (j = 50; j < 64; j++) {
-//    	    tmp = A[i][j];
-//    	    B[j][i] = tmp;
-//				}
-//		}
-//		
-//    for (i = 50; i < N; i++) {
-//        for (j = 0; j < M; j++) {
-//       	    tmp = A[i][j];
-//       	    B[j][i] = tmp;
-//        }
-//    }   
-//	
-//		int r,l,temp = 0;
 		else {
-		#define BLOCKSIZE 8;
-			for (ir = 0; ir < N; ir += BLOCKSIZE) {
-				for (jr = 0; jr < M; jr += BLOCKSIZE) {
-					for(i = ir; i < ir + BLOCKSIZE; ++i) {
-						for(j = jr; j < jr + BLOCKSIZE; ++j) {
+			for (ir = 0; ir < N; ir += BLOCKSIZE8) {
+				for (jr = 0; jr < M; jr += BLOCKSIZE8) {
+					for(i = ir; i < ir + BLOCKSIZE8; ++i) {
+						for(j = jr; j < jr + BLOCKSIZE8; ++j) {
 		    	    B[j][i] = A[i][j];
 						}
-//						if (i != j) {
-//					    B[j][i] = A[i][j];	//When not a diagonal element, perform the normal transpose
-//						}
-//						else {
-//					 	// Temporary variables are used so that 'B' matrix is not accessed, thereby the 'A' value is not replaced in the cache.
-//							temp=A[i][j];
-//							r=i;
-//							l=1; //Indicating that diagonal element is accessed
-//						}
-
 					}
 		    }
-//				if(l==1) {
-//					B[r][r]=temp;
-//					l=0;
-//				}
 			}
 		}
 	}	
