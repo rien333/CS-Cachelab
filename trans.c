@@ -84,7 +84,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 					    B[j][i] = A[i][j];	//When not a diagonal element, perform the normal transpose
 						}
 						else {
-							switch(i%BLOCKSIZE8) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
+							switch(i%BLOCKSIZE8) {
 								case 0:
 									temp1=A[i][j];
 									break;
