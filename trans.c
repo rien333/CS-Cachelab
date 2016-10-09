@@ -64,16 +64,15 @@ char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
 	int i, j, ir, jr, tmp;
-	int blocksize = 8;
 	int temp1,temp2,temp3,temp4;
 
 
 	if(N==67 && M==61) {
-		blocksize = 4;
-		for (ir = 0; ir < 66; ir += blocksize) {
-		  for (jr = 0; jr < 60; jr += blocksize) {
-		    for(i = ir; i < ir + blocksize; ++i) {
-					for(j = jr; j < jr + blocksize; ++j){
+		#define BLOCKSIZE 4;
+		for (ir = 0; ir < 66; ir += BLOCKSIZE) {
+		  for (jr = 0; jr < 60; jr += BLOCKSIZE) {
+		    for(i = ir; i < ir + BLOCKSIZE; ++i) {
+					for(j = jr; j < jr + BLOCKSIZE; ++j){
 //		   	    tmp = ;
 		   	  	B[j][i] = A[i][j];
 					}
@@ -94,16 +93,16 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 	}
 	else { // if(N==64 && M==64) { // was 64x64
 		if(N==64 && M==64) { // was 64x64
-			blocksize = 4;
-			for (ir = 0; ir < N; ir += blocksize) {
-				for (jr = 0; jr < M; jr += blocksize) {
-					for(i = ir; i < ir + blocksize; ++i) {
-						for(j = jr; j < jr + blocksize; ++j) {
+			#define BLOCKSIZE 4;
+			for (ir = 0; ir < N; ir += BLOCKSIZE) {
+				for (jr = 0; jr < M; jr += BLOCKSIZE) {
+					for(i = ir; i < ir + BLOCKSIZE; ++i) {
+						for(j = jr; j < jr + BLOCKSIZE; ++j) {
 							if (i != j) {
 						    B[j][i] = A[i][j];	//When not a diagonal element, perform the normal transpose
 							}
 							else {
-								switch(i%blocksize) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
+								switch(i%BLOCKSIZE) { // instead of tmpidx, maybe BLOCKSIZE-(j%BLOCKSIZE)? (but then correct) 
 									case 0:
 										temp1=A[i][j];
 										break;
@@ -123,8 +122,8 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 					// Block is over
 					if(ir==jr) { // on diagonal
 						i = 0; // reuse i
-						for(; i < blocksize; i++) {
-							switch(i) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
+						for(; i < BLOCKSIZE; i++) {
+							switch(i) { // instead of tmpidx, maybe BLOCKSIZE-(j%BLOCKSIZE)? (but then correct) 
 								case 0:
 									B[ir+i][ir+i]=temp1;
 									break;
@@ -143,10 +142,10 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 				}
 			}
 		}
-//		for (ir = 0; ir < N; ir += blocksize) { // The conditional statement in this loop does not make sense
-//		  for (jr = 0; jr < M; jr += blocksize) {
-//		    for(i = ir; i < ir + blocksize; i++) {
-//					for(j = jr; j < jr + blocksize; j++) {
+//		for (ir = 0; ir < N; ir += BLOCKSIZE) { // The conditional statement in this loop does not make sense
+//		  for (jr = 0; jr < M; jr += BLOCKSIZE) {
+//		    for(i = ir; i < ir + BLOCKSIZE; i++) {
+//					for(j = jr; j < jr + BLOCKSIZE; j++) {
 //						if(i>63 || j>63) { // Escape out of bounds
 //							continue;
 //						}
@@ -180,10 +179,11 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 //	
 //		int r,l,temp = 0;
 		else {
-			for (ir = 0; ir < N; ir += blocksize) {
-				for (jr = 0; jr < M; jr += blocksize) {
-					for(i = ir; i < ir + blocksize; ++i) {
-						for(j = jr; j < jr + blocksize; ++j) {
+		#define BLOCKSIZE 8;
+			for (ir = 0; ir < N; ir += BLOCKSIZE) {
+				for (jr = 0; jr < M; jr += BLOCKSIZE) {
+					for(i = ir; i < ir + BLOCKSIZE; ++i) {
+						for(j = jr; j < jr + BLOCKSIZE; ++j) {
 		    	    B[j][i] = A[i][j];
 						}
 //						if (i != j) {
