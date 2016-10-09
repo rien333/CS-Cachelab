@@ -64,155 +64,139 @@ char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
 	int i, j, ir, jr;
-//	int blocksize = 8;
 	int temp1,temp2,temp3,temp4;
 	#define BLOCKSIZE4 4
 	#define BLOCKSIZE8 8
 
-	if(N==67 && M==61) {
-		for (ir = 0; ir < 66; ir += BLOCKSIZE4) {
-		  for (jr = 0; jr < 60; jr += BLOCKSIZE4) {
-		    for(i = ir; i < ir + BLOCKSIZE4; ++i) {
-					for(j = jr; j < jr + BLOCKSIZE4; ++j){
-		   	  	B[j][i] = A[i][j];
+	if((N==67 && M==61) || (N==32 ) {
+		int temp5,temp6,temp7,temp8;
+		for (ir = 0; ir < M; ir += BLOCKSIZE8) {
+			for (jr = 0; jr < N; jr += BLOCKSIZE8) {
+				for (i = jr; (i < jr + BLOCKSIZE8); ++i) {
+					if(i >= N) { // Continue when going out of bounds
+						continue;
 					}
-		    }
-			}
-		}
-		// Do like ordering between these ifs and start from a negative index (to exploit already cached shit)
-		for(j = 60; j > 0; --j) {
- 	    B[j][0] = A[0][j];
-		}
-//		print_array(M,N,B);
-		for(i = 1; i < 67; ++i) {
- 	    B[60][i] = A[i][60];
-		}
-	}
-	else { // if(N==64 && M==64) { // was 64x64
-		if(N==64 && M==64) { // was 64x64
-			for (ir = 0; ir < N; ir += BLOCKSIZE4) {
-				for (jr = 0; jr < M; jr += BLOCKSIZE4) {
-					for(i = ir; i < ir + BLOCKSIZE4; ++i) {
-						for(j = jr; j < jr + BLOCKSIZE4; ++j) {
-							if (i != j) {
-						    B[j][i] = A[i][j];	//When not a diagonal element, perform the normal transpose
-							}
-							else {
-								switch(i%BLOCKSIZE4) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
-									case 0:
-										temp1=A[i][j];
-										break;
-									case 1:
-										temp2=A[i][j];
-										break;
-									case 2:
-										temp3=A[i][j];
-										break;
-									case 3:
-										temp4=A[i][j];
-										break;
-								}
-							}
+					for (j = ir; (j < ir + BLOCKSIZE8); ++j) {
+						if(j >= M) {
+							continue;
 						}
-			    }
-					// Block is over
-					if(ir==jr) { // on diagonal
-						i = 0; // reuse i
-						for(; i < BLOCKSIZE4; i++) {
-							switch(i) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
+						if (i != j) {
+					    B[j][i] = A[i][j];	//When not a diagonal element, perform the normal transpose
+						}
+						else {
+							switch(i%BLOCKSIZE8) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
 								case 0:
-									B[ir+i][ir+i]=temp1;
+									temp1=A[i][j];
 									break;
 								case 1:
-									B[ir+i][ir+i]=temp2;
+									temp2=A[i][j];
 									break;
 								case 2:
-									B[ir+i][ir+i]=temp3;
+									temp3=A[i][j];
 									break;
 								case 3:
-									B[ir+i][ir+i]=temp4;
+									temp4=A[i][j];
+									break;
+								case 4:
+									temp5=A[i][j];
+									break;
+								case 5:
+									temp6=A[i][j];
+									break;
+								case 6:
+									temp7=A[i][j];
+									break;
+								case 7:
+									temp8=A[i][j];
 									break;
 							}
-						} 
+						}
 					}
+		    }
+				// Block is over
+				if(ir==jr) { // on diagonal
+					i = 0; // reuse i
+					for(; i < BLOCKSIZE8; i++) {
+						switch(i) {
+							case 0:
+								B[ir+i][ir+i]=temp1;
+								break;
+							case 1:
+								B[ir+i][ir+i]=temp2;
+								break;
+							case 2:
+								B[ir+i][ir+i]=temp3;
+								break;
+							case 3:
+								B[ir+i][ir+i]=temp4;
+								break;
+							case 4:
+								B[ir+i][ir+i]=temp5;
+								break;
+							case 5:
+								B[ir+i][ir+i]=temp6;
+								break;
+							case 6:
+								B[ir+i][ir+i]=temp7;
+								break;
+							case 7:
+								B[ir+i][ir+i]=temp8;
+								break;
+						}
+					}  
 				}
 			}
 		}
-		else {
-			int temp5,temp6,temp7,temp8;
-			for (ir = 0; ir < N; ir += BLOCKSIZE8) {
-				for (jr = 0; jr < M; jr += BLOCKSIZE8) {
-					for(i = ir; i < ir + BLOCKSIZE8; ++i) {
-						for(j = jr; j < jr + BLOCKSIZE8; ++j) {
-							if (i != j) {
-						    B[j][i] = A[i][j];	//When not a diagonal element, perform the normal transpose
-							}
-							else {
-								switch(i%BLOCKSIZE8) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
-									case 0:
-										temp1=A[i][j];
-										break;
-									case 1:
-										temp2=A[i][j];
-										break;
-									case 2:
-										temp3=A[i][j];
-										break;
-									case 3:
-										temp4=A[i][j];
-										break;
-									case 4:
-										temp5=A[i][j];
-										break;
-									case 5:
-										temp6=A[i][j];
-										break;
-									case 6:
-										temp7=A[i][j];
-										break;
-									case 7:
-										temp8=A[i][j];
-										break;
-								}
-							}
+	} // end 61x67 / 32x32
+	else if(N==64 && M==64) { 
+		for (ir = 0; ir < N; ir += BLOCKSIZE4) {
+			for (jr = 0; jr < M; jr += BLOCKSIZE4) {
+				for(i = ir; i < ir + BLOCKSIZE4; ++i) {
+					for(j = jr; j < jr + BLOCKSIZE4; ++j) {
+						if (i != j) {
+					    B[j][i] = A[i][j];	// When not a diagonal element, perform the normal transpose
 						}
-			    }
-					// Block is over
-					if(ir==jr) { // on diagonal
-						i = 0; // reuse i
-						for(; i < BLOCKSIZE8; i++) {
-							switch(i) { // instead of tmpidx, maybe blocksize-(j%blocksize)? (but then correct) 
+						else {
+							switch(i%BLOCKSIZE4) { 
 								case 0:
-									B[ir+i][ir+i]=temp1;
+									temp1=A[i][j];
 									break;
 								case 1:
-									B[ir+i][ir+i]=temp2;
+									temp2=A[i][j];
 									break;
 								case 2:
-									B[ir+i][ir+i]=temp3;
+									temp3=A[i][j];
 									break;
 								case 3:
-									B[ir+i][ir+i]=temp4;
-									break;
-								case 4:
-									B[ir+i][ir+i]=temp5;
-									break;
-								case 5:
-									B[ir+i][ir+i]=temp6;
-									break;
-								case 6:
-									B[ir+i][ir+i]=temp7;
-									break;
-								case 7:
-									B[ir+i][ir+i]=temp8;
+									temp4=A[i][j];
 									break;
 							}
-						} 
+						}
 					}
 		    }
+				// Block is over
+				if(ir==jr) { // on diagonal
+					i = 0; // reuse i
+					for(; i < BLOCKSIZE4; i++) {
+						switch(i) {
+							case 0:
+								B[ir+i][ir+i]=temp1;
+								break;
+							case 1:
+								B[ir+i][ir+i]=temp2;
+								break;
+							case 2:
+								B[ir+i][ir+i]=temp3;
+								break;
+							case 3:
+								B[ir+i][ir+i]=temp4;
+								break;
+						}
+					} 
+				}
 			}
 		}
-	}	
+	}
 }
 
 /* 
@@ -223,7 +207,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 /* 
  * trans - A simple baseline transpose function, not optimized for the cache.
  */
-char trans_desc[] = "Simple row-wise scan transpose";
+char trans_desc[] = "Simple jr-wise scan transpose";
 void trans(int M, int N, int A[N][M], int B[M][N])
 {
     int i, j, tmp;
