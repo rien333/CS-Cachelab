@@ -63,14 +63,14 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N]);
 char transpose_submit_desc[] = "Transpose submission";
 void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 {
-	int i, j, ir, jr;
+	int i, j, ir, jr = 0;
 
 	int temp1,temp2,temp3,temp4;
+	int temp5,temp6,temp7,temp8; // Move down if unneeded here
+
 	#define BLOCKSIZE4 4
 	#define BLOCKSIZE8 8
-//	if((N==67 && M==61) || (N==32 && M==32)) {
-		if(1) {
-		int temp5,temp6,temp7,temp8;
+	if((N==67 && M==61) || (N==32 && M==32)) {
 		for (ir = 0; ir < M; ir += BLOCKSIZE8) {
 			for (jr = 0; jr < N; jr += BLOCKSIZE8) {
 				for (i = jr; (i < jr + BLOCKSIZE8); ++i) {
@@ -84,8 +84,8 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 						if (i != j) {
 					    B[j][i] = A[i][j];	//When not a diagonal element, perform the normal transpose
 						}
-						else { 
-							// if's are cache friendlier than switches
+						else { // Otherwhise save the diagonal value for later use
+							// if statements are cache friendlier than switches
 							if ((i%BLOCKSIZE8)==0) {
 								temp1=A[i][j];
 							}
@@ -114,7 +114,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 					}
 		    }
 				// Block is over
-				if(ir==jr) { // on diagonal
+				if(ir==jr) { // on a diagonal block
 					i = 0; // reuse i
 					for(; i < BLOCKSIZE8; i++) {
 						if(i == 0)	{
@@ -146,32 +146,84 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 			}
 		}
 	} // end 67x61 / 32x32
-	else if(N==64 && M==64) { 
+	else if(N==16 && M==16) { 
 		for (ir = 0; ir < N; ir += BLOCKSIZE4) {
 			for (jr = 0; jr < M; jr += BLOCKSIZE4) {
 				for(i = ir; i < ir + BLOCKSIZE4; ++i) {
+
+					if( i == ir &&  ir == (jr-BLOCKSIZE4) ) {
+						temp1 = A[i][j];
+						temp2 = A[i][j+1];
+						temp3 = A[i][j+2];
+						temp4 = A[i][j+3];						
+						printf("restoring temps \n");
+						continue;
+					}
+					else {
+						printf("Not restoring temps \n");
+					}
+
+					// first run or the previous thingy was a diagonal
+					if(i == 0 && j == 0 ) { 
+						temp5 = A[i][j];
+						temp6 = A[i][j+1];
+						temp7 = A[i][j+2];
+						temp8 = A[i][j+3];	
+						continue;
+					}
+
+
 					for(j = jr; j < jr + BLOCKSIZE4; ++j) {
-						if (i != j) {
-					    B[j][i] = A[i][j];	// When not a diagonal element, perform the normal transpose
+						if(ir==jr) { // on a diagonal block
+							if (i != j) {
+						    B[j][i] = A[i][j];	// When not a diagonal element, perform the normal transpose
+							}
+							else {
+								if ((i%BLOCKSIZE4)==0) {
+									temp1=A[i][j];
+								}
+								else if ((i%BLOCKSIZE4)==1) {
+									temp2=A[i][j];
+								}
+								else if ((i%BLOCKSIZE4)==2) {
+									temp3=A[i][j];
+								}
+								else if ((i%BLOCKSIZE4)==3) {
+									temp4=A[i][j];
+								}
+							}
 						}
 						else {
-							if ((i%BLOCKSIZE4)==0) {
-								temp1=A[i][j];
+							if(i%2) { // alternate (try with larger blocks?) 
+												// also maybe alternate only in really specific cases. such as 
+												// when you're for sure that the set index is the same
+								temp5 = A[i][j];
+								temp6 = A[i][j+1];
+								temp7 = A[i][j+2];
+								temp8 = A[i][j+3];
+								B[j][i-1] = temp1;
+								B[j+1][i-1] = temp2;
+								B[j+2][i-1] = temp3;
+								B[j+3][i-1] = temp4;
+								j += 3;
 							}
-							else if ((i%BLOCKSIZE4)==1) {
-								temp2=A[i][j];
-							}
-							else if ((i%BLOCKSIZE4)==2) {
-								temp3=A[i][j];
-							}
-							else if ((i%BLOCKSIZE4)==3) {
-								temp4=A[i][j];
+							else {
+								temp1 = A[i][j];
+								temp2 = A[i][j+1];
+								temp3 = A[i][j+2];
+								temp4 = A[i][j+3];
+								B[j][i-1] = temp5;
+								B[j+1][i-1] = temp6;
+								B[j+2][i-1] = temp7;
+								B[j+3][i-1] = temp8;
+								j += 3;
 							}
 						}
+
 					}
 		    }
 				// Block is over
-				if(ir==jr) { // on diagonal
+				if(ir==jr) { // on a diagonal block
 					i = 0; // reuse i
 					for(; i < BLOCKSIZE4; i++) {
 						if(i == 0)	{
@@ -186,7 +238,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 						else if(i == 3)	{
 							B[ir+i][ir+i]=temp4;
 						}
-					} 
+					}
 				}
 			}
 		}
@@ -284,23 +336,23 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N])
 
 int main()
 {
-	int M = 64;
-	int N = 64; 
+	int M = 16;
+	int N = 16; 
 //	int A[N][M] = {{5, 7}, {3, 2}, {1, 6}, {9, 2}}; // Fill up A
 
 	int A[N][M];
 	int B[M][N];
 
 	fill_array(N, M, A);
-//	print_array(N, M, A);
+	print_array(N, M, A);
 	transpose_submit(M, N, A, B);
 
 	printf("\n\t------------------------------------------------------------------------------------ \n\n");
-//	print_array(M, N, B);
+	print_array(M, N, B);
 	printf("Correct: %d\n", is_transpose(M, N, A, B));
-//	printf("Correct matrix: \n");
-//	trans(M, N, A, B);
-//	print_array(M, N, B);
+	printf("Correct matrix: \n");
+	trans(M, N, A, B);
+	print_array(M, N, B);
 }
 
 
