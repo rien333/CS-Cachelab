@@ -10,8 +10,10 @@
 #include <stdio.h>
 #ifdef DEBUG
 #include <stdlib.h>
-#endif
+#else
 #include "cachelab.h"
+#endif
+
 
 #ifdef DEBUG
 
@@ -146,57 +148,44 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 			}
 		}
 	} // end 67x61 / 32x32
-	else if(N==16 && M==16) { 
+	else if(N==64 && M==64) { 
+		j =0;
 		for (ir = 0; ir < N; ir += BLOCKSIZE4) {
 			for (jr = 0; jr < M; jr += BLOCKSIZE4) {
-				for(i = ir; i < ir + BLOCKSIZE4; ++i) {
+				for(i = ir; i < ir + BLOCKSIZE4; i++) {
 
-					if( i == ir &&  ir == (jr-BLOCKSIZE4) ) {
+					if(jr == 0 && ir == 0 && i == 0 && j == 0) { // previous was diagonal or something
 						temp1 = A[i][j];
 						temp2 = A[i][j+1];
 						temp3 = A[i][j+2];
-						temp4 = A[i][j+3];						
-						printf("restoring temps \n");
-						continue;
-					}
-					else {
-						printf("Not restoring temps \n");
-					}
-
-					// first run or the previous thingy was a diagonal
-					if(i == 0 && j == 0 ) { 
-						temp5 = A[i][j];
-						temp6 = A[i][j+1];
-						temp7 = A[i][j+2];
-						temp8 = A[i][j+3];	
+						temp4 = A[i][j+3];		
 						continue;
 					}
 
+					for(j = jr; j < jr + BLOCKSIZE4; j++) {
+//						if(ir==jr) { // on a diagonal block
+//							if (i != j) {
+//						    B[j][i] = A[i][j];	// When not a diagonal element, perform the normal transpose
+//							}
+//							else {
+//								if ((i%BLOCKSIZE4)==0) {
+//									temp1=A[i][j];
+//								}
+//								else if ((i%BLOCKSIZE4)==1) {
+//									temp2=A[i][j];
+//								}
+//								else if ((i%BLOCKSIZE4)==2) {
+//									temp3=A[i][j];
+//								}
+//								else if ((i%BLOCKSIZE4)==3) {
+//									temp4=A[i][j];
+//								}
+//							}
+//						}
+//						else {
+//							
 
-					for(j = jr; j < jr + BLOCKSIZE4; ++j) {
-						if(ir==jr) { // on a diagonal block
-							if (i != j) {
-						    B[j][i] = A[i][j];	// When not a diagonal element, perform the normal transpose
-							}
-							else {
-								if ((i%BLOCKSIZE4)==0) {
-									temp1=A[i][j];
-								}
-								else if ((i%BLOCKSIZE4)==1) {
-									temp2=A[i][j];
-								}
-								else if ((i%BLOCKSIZE4)==2) {
-									temp3=A[i][j];
-								}
-								else if ((i%BLOCKSIZE4)==3) {
-									temp4=A[i][j];
-								}
-							}
-						}
-						else {
-							if(i%2) { // alternate (try with larger blocks?) 
-												// also maybe alternate only in really specific cases. such as 
-												// when you're for sure that the set index is the same
+							if(i%2) {
 								temp5 = A[i][j];
 								temp6 = A[i][j+1];
 								temp7 = A[i][j+2];
@@ -212,34 +201,22 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 								temp2 = A[i][j+1];
 								temp3 = A[i][j+2];
 								temp4 = A[i][j+3];
-								B[j][i-1] = temp5;
-								B[j+1][i-1] = temp6;
-								B[j+2][i-1] = temp7;
-								B[j+3][i-1] = temp8;
+								if (!(i == ir && j == jr)) { // Already done in (1)
+									B[j][i-1] = temp5;
+									B[j+1][i-1] = temp6;
+									B[j+2][i-1] = temp7;
+									B[j+3][i-1] = temp8;
+								}
 								j += 3;
 							}
-						}
-
 					}
 		    }
 				// Block is over
-				if(ir==jr) { // on a diagonal block
-					i = 0; // reuse i
-					for(; i < BLOCKSIZE4; i++) {
-						if(i == 0)	{
-							B[ir+i][ir+i]=temp1;
-						}
-						else if(i == 1)	{
-							B[ir+i][ir+i]=temp2;
-						}
-						else if(i == 2)	{
-							B[ir+i][ir+i]=temp3;
-						}
-						else if(i == 3)	{
-							B[ir+i][ir+i]=temp4;
-						}
-					}
-				}
+				// (1) 
+				B[j-4][i-1] = temp5;
+				B[j-3][i-1] = temp6;
+				B[j-2][i-1] = temp7;
+				B[j-1][i-1] = temp8;
 			}
 		}
 	}
@@ -324,7 +301,7 @@ int is_transpose(int M, int N, int A[N][M], int B[M][N])
 
 
 // To enable debugging (i.e. run this main), enter the following:
-// $ gcc trans.c -o trans-test -D DEBUG
+// $ gcc -g trans.c -o trans-foo -D DEBUG
 // To run it with the matrix you specified in main(), enter:
 // $ ./trans-test 
 // PROFIT??? 
@@ -344,15 +321,16 @@ int main()
 	int B[M][N];
 
 	fill_array(N, M, A);
-	print_array(N, M, A);
+//	print_array(N, M, A);
+//	printf("wut the %d \n", A[5][-3]);
 	transpose_submit(M, N, A, B);
 
 	printf("\n\t------------------------------------------------------------------------------------ \n\n");
-	print_array(M, N, B);
+//	print_array(M, N, B);
 	printf("Correct: %d\n", is_transpose(M, N, A, B));
-	printf("Correct matrix: \n");
-	trans(M, N, A, B);
-	print_array(M, N, B);
+//	printf("Correct matrix: \n");
+//	trans(M, N, A, B);
+//	print_array(M, N, B);
 }
 
 
