@@ -150,9 +150,9 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 	} // end 67x61 / 32x32
 	else if(N==64 && M==64) { 
 		j =0;
-		for (ir = 0; ir < N; ir += BLOCKSIZE4) {
+		for (ir = 0; ir < N; ir += BLOCKSIZE8) {
 			for (jr = 0; jr < M; jr += BLOCKSIZE4) {
-				for(i = ir; i < ir + BLOCKSIZE4; i++) {
+				for(i = ir; i < ir + BLOCKSIZE8; i++) {
 
 					if(jr == 0 && ir == 0 && i == 0 && j == 0) { // previous was diagonal or something
 						temp1 = A[i][j];
