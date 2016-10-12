@@ -68,7 +68,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 	int i, j, ir, jr = 0;
 
 	int temp1,temp2,temp3,temp4;
-	int temp5,temp6,temp7,temp8; // Move down if unneeded here
+	int temp5,temp6,temp7,temp8;
 
 	#define BLOCKSIZE4 4
 	#define BLOCKSIZE8 8
@@ -118,7 +118,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 				// Block is over
 				if(ir==jr) { // on a diagonal block
 					i = 0; // reuse i
-					for(; i < BLOCKSIZE8; i++) {
+					for(; i < BLOCKSIZE8; i++) { // Store diagonal values in B
 						if(i == 0)	{
 							B[ir+i][ir+i]=temp1;
 						}
@@ -154,7 +154,8 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 			for (jr = 0; jr < M; jr += BLOCKSIZE4) {
 				for(i = ir; i < ir + BLOCKSIZE8; i++) {
 
-					if(jr == 0 && ir == 0 && i == 0 && j == 0) { // previous was diagonal or something
+					 // Store something in the values the first time around
+					if(jr == 0 && ir == 0 && i == 0 && j == 0) {
 						temp1 = A[i][j];
 						temp2 = A[i][j+1];
 						temp3 = A[i][j+2];
@@ -163,29 +164,8 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 					}
 
 					for(j = jr; j < jr + BLOCKSIZE4; j++) {
-//						if(ir==jr) { // on a diagonal block
-//							if (i != j) {
-//						    B[j][i] = A[i][j];	// When not a diagonal element, perform the normal transpose
-//							}
-//							else {
-//								if ((i%BLOCKSIZE4)==0) {
-//									temp1=A[i][j];
-//								}
-//								else if ((i%BLOCKSIZE4)==1) {
-//									temp2=A[i][j];
-//								}
-//								else if ((i%BLOCKSIZE4)==2) {
-//									temp3=A[i][j];
-//								}
-//								else if ((i%BLOCKSIZE4)==3) {
-//									temp4=A[i][j];
-//								}
-//							}
-//						}
-//						else {
-//							
 
-							if(i%2) {
+							if(i%2) { // Delay assigment to B by alternating on rows
 								temp5 = A[i][j];
 								temp6 = A[i][j+1];
 								temp7 = A[i][j+2];
@@ -212,7 +192,7 @@ void transpose_submit(int M, int N, int A[N][M], int B[M][N])
 					}
 		    }
 				// Block is over
-				// (1) 
+				// (1) store the last saved values before the block ends
 				B[j-4][i-1] = temp5;
 				B[j-3][i-1] = temp6;
 				B[j-2][i-1] = temp7;
